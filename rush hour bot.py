@@ -22,6 +22,7 @@ class Car:
             return True
         return False
 
+
 class State:
     def __init__(self, cars, freespaces, currmoves):
         self.cars = cars
@@ -35,58 +36,41 @@ class State:
         return True
 
 
-print("What would you like the grid size to be?")
-n = int(input())
-print("How many cars would you like?")
-c = int(input())
-cars = []
-print("We'll represent the grid with coordinates, with the x-position increasing from left to right and the y-position increasing from top to bottom. All coordinates begin at 1.")
-print("\n")
-for i in range(c):
-    print("Enter the x and y coordinate of the top-left square of car #" + str(i+1) + " with a single space in between the two numbers.")
-    coords = input().split(" ")
-    xcoord = int(coords[0])
-    ycoord = int(coords[1])
-    print("How long is the car?")
-    length = int(input())
-    print("Finally, is the car's body spanning left-right or top-bottom? Enter 1 for left/right and 2 for top/bottom.")
-    direction = int(input())
-    car = Car(xcoord, ycoord, length, direction)
-    cars.append(car)
-print("You initialized a puzzle with the following cars: ")
 def toggle(n):
     if n == 1:
         return "left-right."
     else:
         return "top-bottom."
-for j in range(len(cars)):
-    c = cars[j]
-    print("Car #" + str(j+1) + ": " + "top left corner at [" + str(c.x) + ", " + str(c.y) + "] with length " + str(c.length) + " and spanning " + toggle(c.orient))
-print("We will now begin finding a solution.")
-
-target = [5, 3] #once our model left-right length 2 red car arrives here, the game is won
-
-'''
-n = 6
-Car1 = Car(1, 3, 2, 1)
-Car2 = Car(1, 4, 3, 1)
-Car3 = Car(3, 1, 3, 2)
-Car4 = Car(5, 1, 2, 1)
-Car5 = Car(6, 4, 3, 2)
-cars = [Car1, Car2, Car3, Car4, Car5]
-'''
-
-freespaces = [[i,j] for i in range(1, n+1) for j in range(1, n+1)]
-#initialize this list
-for i in cars:
-    for j in i.occupy():
-        if j in freespaces:
-            freespaces.remove(j)
 
 
-initial = State(cars, freespaces, [])
+def takeInput():
+    print("What would you like the grid size to be?")
+    n = int(input())
+    print("How many cars would you like?")
+    c = int(input())
+    cars = []
+    print("We'll represent the grid with coordinates, with the x-position increasing from left to right and the y-position increasing from top to bottom. All coordinates begin at 1.")
+    print("\n")
+    for i in range(c):
+        print("Enter the x and y coordinate of the top-left square of car #" + str(i+1) + " with a single space in between the two numbers.")
+        coords = input().split(" ")
+        xcoord = int(coords[0])
+        ycoord = int(coords[1])
+        print("How long is the car?")
+        length = int(input())
+        print("Finally, is the car's body spanning left-right or top-bottom? Enter 1 for left/right and 2 for top/bottom.")
+        direction = int(input())
+        car = Car(xcoord, ycoord, length, direction)
+        cars.append(car)
+    print("You initialized a puzzle with the following cars: ")
 
-visited = [] #stores instances of "State"
+    for j in range(len(cars)):
+        c = cars[j]
+        print("Car #" + str(j+1) + ": " + "top left corner at [" + str(c.x) + ", " + str(c.y) + "] with length " + str(c.length) + " and spanning " + toggle(c.orient))
+    print("We will now begin finding a solution.")
+
+    return n, cars
+
 
 def validmoves(currstate):
     cars = currstate.cars
@@ -113,6 +97,7 @@ def validmoves(currstate):
                 moves.append([i+1, index])
                 index -= 1
     return moves
+
 
 def applymove(move, oldstate):
     #change cars component
@@ -159,14 +144,40 @@ def applymove(move, oldstate):
     return State
 
 
-currstack = [initial]
-foundsol = False
-
 def check(state, visited):
     for i in visited:
         if i.__eqstate__(state):
             return True
     return False
+
+
+target = [5, 3] #once our model left-right length 2 red car arrives here, the game is won
+n, cars = takeInput()
+
+'''
+n = 6
+Car1 = Car(1, 3, 2, 1)
+Car2 = Car(1, 4, 3, 1)
+Car3 = Car(3, 1, 3, 2)
+Car4 = Car(5, 1, 2, 1)
+Car5 = Car(6, 4, 3, 2)
+cars = [Car1, Car2, Car3, Car4, Car5]
+'''
+
+freespaces = [[i,j] for i in range(1, n+1) for j in range(1, n+1)]
+#initialize this list
+for i in cars:
+    for j in i.occupy():
+        if j in freespaces:
+            freespaces.remove(j)
+
+
+initial = State(cars, freespaces, [])
+
+visited = [] #stores instances of "State"
+
+currstack = [initial]
+foundsol = False
 
 while (foundsol == False):
  
