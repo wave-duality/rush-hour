@@ -17,22 +17,23 @@ class Car:
                 spaces.append([self.x, self.y+i])
         return spaces
 
-    def __eqcar__(self, other):
+    def __eq__(self, other):
         if self.x == other.x and self.y == other.y and self.length == other.length and self.orient == other.orient:
             return True
         return False
 
 
 class State:
-    def __init__(self, cars, freespaces, currmoves):
+    def __init__(self, board, cars, currmoves):
+        self.board = board
         self.cars = cars
-        self.freespaces = freespaces
         self.currmoves = currmoves
 
-    def __eqstate__(self, other):
-        for i in range(0, len(self.cars)):
-            if not self.cars[i].__eqcar__(other.cars[i]):
-                return False
+    def __eq__(self, other):
+        for i in range(0, len(self.board)):
+            for j in range(0, len(self.board[0])):
+                if self.board[i][j] != other.board[i][j]:
+                    return False
         return True
 
 
@@ -73,39 +74,52 @@ def takeInput():
 
 
 def validmoves(currstate):
+    board = currstate.board
     cars = currstate.cars
-   
-    freespaces = currstate.freespaces
     #valid moves, given a car configuration
     moves = []
     for i in range(0, len(cars)):
         index = 1
         if cars[i].orient == 1:
-            while (cars[i].x+cars[i].length-1+index <= n and [cars[i].x+cars[i].length-1+index, cars[i].y] in freespaces):
+            while (cars[i].x+cars[i].length-1+index <= n and board[cars[i].y-1][cars[i].x+cars[i].length-1+index-1] == 0):
                 moves.append([i+1, index])
                 index += 1
             index = -1
-            while (cars[i].x+index >= 1 and [cars[i].x+index, cars[i].y] in freespaces):
+            while (cars[i].x+index >= 1 and board[cars[i].y-1][cars[i].x+index-1] == 0):
                 moves.append([i+1, index])
                 index -= 1
         else:
-            while (cars[i].y+cars[i].length-1+index <= n and [cars[i].x, cars[i].y+cars[i].length-1+index] in freespaces):
+            while (cars[i].y+cars[i].length-1+index <= n and board[cars[i].y+cars[i].length-1+index-1][cars[i].x-1] == 0):
                 moves.append([i+1, index])
                 index += 1
             index = -1
-            while (cars[i].y+index >= 1 and [cars[i].x, cars[i].y+index] in freespaces):
+            while (cars[i].y+index >= 1 and board[cars[i].y+index-1][cars[i].x-1] == 0):
                 moves.append([i+1, index])
                 index -= 1
     return moves
 
 
 def applymove(move, oldstate):
-    #change cars component
-    State = copy.copy(oldstate)
-    
-    car = State.cars[move[0]-1]
 
-    newcars = copy.copy(State.cars)
+    State = copy.deepcopy(oldstate)
+    car = State.cars[move[0]-1]
+    
+    newboard = copy.deepcopy(State.board)
+    if car.orient == 1:
+        for i in range(0, car.length):
+            newboard[car.y-1][car.x+i-1] = 0
+            #print(car.y-1, car.x+i-1)
+        for i in range(0, car.length):
+            newboard[car.y-1][car.x+i+move[1]-1] = move[0]
+            #print(car.y-1, car.x+i+move[1]-1)
+    else:
+        for i in range(0, car.length):
+            newboard[car.y+i-1][car.x-1] = 0
+        for i in range(0, car.length):
+            newboard[car.y+i+move[1]-1][car.x-1] = move[0]
+    State.board = newboard
+
+    newcars = copy.deepcopy(State.cars)
     index = newcars.index(car)
     newcars.remove(car)
     if car.orient == 1:
@@ -113,29 +127,7 @@ def applymove(move, oldstate):
     else:
         newcar = Car(car.x, car.y+move[1], car.length, car.orient)
     newcars.insert(index, newcar)
-    State.cars = copy.copy(newcars)
-    #change freespaces component
-    freespaces = copy.copy(State.freespaces)
- 
-    if car.orient == 1:
-        if move[1] > 0:
-            for i in range(1, move[1]+1):
-                freespaces.append([car.x+i-1, car.y])
-                freespaces.remove([car.x+i+car.length-1, car.y])
-        else:
-            for i in range(-1, move[1]-1, -1):
-                freespaces.append([car.x+i+car.length, car.y])
-                freespaces.remove([car.x+i, car.y])
-    else:
-        if move[1] > 0:
-            for i in range(1, move[1]+1):
-                freespaces.append([car.x, car.y+i-1])
-                freespaces.remove([car.x, car.y+i+car.length-1])
-        else:
-            for i in range(-1, move[1]-1, -1):
-                freespaces.append([car.x, car.y+i+car.length])
-                freespaces.remove([car.x, car.y+i])
-    State.freespaces = freespaces
+    State.cars = newcars
     #change moves component
     moves = copy.copy(State.currmoves)
     moves.append(move)
@@ -146,56 +138,61 @@ def applymove(move, oldstate):
 
 def check(state, visited):
     for i in visited:
-        if i.__eqstate__(state):
+        if i == state:
             return True
     return False
 
+visited = [] #stores instances of "State"
+
+def dfs(state):
+    #if too long, terminate
+    #explore neighbors, mark as visited
+    #if return, mark as unvisited
+    visited.append(state)
+    if state.cars[0].x == target[0] and state.cars[0].y == target[1]:
+        print("Found a Solution! (" + str(len(state.currmoves)) + " moves)")
+        for i in state.currmoves: print(i)
+    else:
+        moves = validmoves(state)
+        for i in moves:
+            new = applymove(i, state)
+            if not check(new, visited) and len(new.currmoves) < 47:
+                dfs(new)
+        visited.remove(state)
+        
 
 target = [5, 3] #once our model left-right length 2 red car arrives here, the game is won
-n, cars = takeInput()
+#n, cars = takeInput()
 
-'''
+
 n = 6
 Car1 = Car(1, 3, 2, 1)
 Car2 = Car(1, 4, 3, 1)
 Car3 = Car(3, 1, 3, 2)
 Car4 = Car(5, 1, 2, 1)
 Car5 = Car(6, 4, 3, 2)
-cars = [Car1, Car2, Car3, Car4, Car5]
-'''
-
-freespaces = [[i,j] for i in range(1, n+1) for j in range(1, n+1)]
-#initialize this list
-for i in cars:
-    for j in i.occupy():
-        if j in freespaces:
-            freespaces.remove(j)
+startcars = [Car1, Car2, Car3, Car4, Car5]
 
 
-initial = State(cars, freespaces, [])
+startboard = []
+for i in range(n):
+    l = []
+    for j in range(n):
+        l.append(0)
+    startboard.append(l)
 
-visited = [] #stores instances of "State"
+for i in range(1, len(startcars)+1):
+    for k in startcars[i-1].occupy():
+        startboard[k[1]-1][k[0]-1] = i
 
-currstack = [initial]
-foundsol = False
 
-while (foundsol == False):
- 
-    #for curr in currstack:
-        #print(curr.cars[0].x, curr.cars[0].y)
-    curr = currstack[-1]
-    currstack.pop()
-    visited.append(curr)
-    if curr.cars[0].x == target[0] and curr.cars[0].y == target[1]:
-        print("Found a Solution! (" + str(len(curr.currmoves)) + " moves)")
-        for i in curr.currmoves: print(i)
-        foundsol = True
-    moves = validmoves(curr)
-    for i in moves:
-        new = applymove(i, curr)
-        if not check(new, visited):
-            currstack.append(new)
-    #print("-------")
+initial = State(startboard, startcars, [])
+
+
+dfs(initial)
+
+
+
     
 
 
