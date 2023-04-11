@@ -162,17 +162,7 @@ def dfs(state):
         
 
 target = [5, 3] #once our model left-right length 2 red car arrives here, the game is won
-#n, cars = takeInput()
-
-
-n = 6
-Car1 = Car(1, 3, 2, 1)
-Car2 = Car(1, 4, 3, 1)
-Car3 = Car(3, 1, 3, 2)
-Car4 = Car(5, 1, 2, 1)
-Car5 = Car(6, 4, 3, 2)
-startcars = [Car1, Car2, Car3, Car4, Car5]
-
+n, startcars = takeInput()
 
 startboard = []
 for i in range(n):
