@@ -24,14 +24,26 @@ class Car:
 
 
 class State:
-    def __init__(self, board, cars, currmoves):
+    MAX_CAR = 10
+
+    def __init__(self, n, board, cars, currmoves):
+        self.board_size = n
         self.board = board
         self.cars = cars
-        self.currmoves = currmoves
+        self.currmoves = currmoves   
+
+    def hash_value(self):
+        val = 0
+        for i in range(0, self.board_size):
+            for j in range(0, self.board_size):
+                if i > 0 or j > 0:
+                    val *= self.MAX_CAR
+                val += self.board[i][j]
+        return val
 
     def __eq__(self, other):
-        for i in range(0, len(self.board)):
-            for j in range(0, len(self.board[0])):
+        for i in range(0, self.board_size):
+            for j in range(0, self.board_size):
                 if self.board[i][j] != other.board[i][j]:
                     return False
         return True
@@ -137,28 +149,26 @@ def applymove(move, oldstate):
 
 
 def check(state, visited):
-    for i in visited:
-        if i == state:
-            return True
-    return False
+    return state.hash_value() in visited
 
-visited = [] #stores instances of "State"
+visited = set() #stores instances of "State"
 
 def dfs(state):
     #if too long, terminate
     #explore neighbors, mark as visited
     #if return, mark as unvisited
-    visited.append(state)
     if state.cars[0].x == target[0] and state.cars[0].y == target[1]:
         print("Found a Solution! (" + str(len(state.currmoves)) + " moves)")
         for i in state.currmoves: print(i)
     else:
+        v = state.hash_value()
+        visited.add(v)
         moves = validmoves(state)
         for i in moves:
             new = applymove(i, state)
-            if not check(new, visited) and len(new.currmoves) < 47:
+            if not check(new, visited) and len(new.currmoves) < 10:
                 dfs(new)
-        visited.remove(state)
+        visited.remove(v)
         
 
 target = [5, 3] #once our model left-right length 2 red car arrives here, the game is won
@@ -176,7 +186,7 @@ for i in range(1, len(startcars)+1):
         startboard[k[1]-1][k[0]-1] = i
 
 
-initial = State(startboard, startcars, [])
+initial = State(n, startboard, startcars, [])
 
 
 dfs(initial)
