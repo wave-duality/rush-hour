@@ -20,16 +20,20 @@ Of course, the blocking heuristic can be taken a step further. We then played wi
 Over all 250 test cases:
 
 
-|    | Avg Nodes Visited ($\mu$) | Avg Length of Solution ($\mu$) |
-|--- | --- | --- |
-|Zero-Heuristic (Naive BFS) | 2294.8 | 9.952 |
-|One-Blocking-Heuristic | 1148.2 | 9.96 |
-|Two-Blocking-Heuristic | 477.7 | 10.14 |
-|Three-Blocking-Heuristic | 465.9 | 10.13 |
+|    | Avg Nodes Visited ($\mu$) | Avg Length of Solution ($\mu$) | Maximum Nodes Visited |
+|--- | --- | --- | --- |
+|Zero-Heuristic (Naive BFS) | 2294.8 | 9.952 | 47162 |
+|One-Blocking-Heuristic | 1148.2 | 9.96 | 14030 |
+|Two-Blocking-Heuristic | 477.7 | 10.14 | 4992 |
+|Three-Blocking-Heuristic | 465.9 | 10.13 | 5092 |
 
 The difference in the heuristics (and the choice to use a heuristic) is much more massive in these 250 generated test cases than the 40 in-game ones, due to the nature of BFS. The in-game puzzles are mostly rigid; at any given state, there are very few cars that can be moved, meaning that the BFS priority_queue expands at a slow rate. On the other hand, in these 250 generated puzzles, there are often many cars that can be moved in a given state, meaning that the BFS node list is massive, even if the solution itself is short. Hence, A*'s advantage over naive BFS really starts to show in cases where the number of visited nodes is very high (assuming one can find an appropriate heuristic).
 
-Although the improvement from 0 -> 1 and 1 -> 2 is very high, after increasing the heuristic recursion depth to 3 we find rarely any noticeable change; this is due to the limited effects that further depths have on such a small grid/search space. One of the key takeaways from this project is that however simple a premise may seem, the inner numbers and interactions may be incredibly complex, and hence, there is no general "ruleset" for coming up with heuristics or clever BFS shortcuts, and considerable time must be spent on free exploration to come up with a good solution.
+Although the improvement from 0 -> 1 and 1 -> 2 is very high, after increasing the heuristic recursion depth to 3 we find rarely any noticeable change; this is due to the limited effects that further depths have on such a small grid/search space. 
+
+Another interesting note is the maximum nodes visited column, which indicates how many nodes the program had to explore in the most "difficult" of the 250 puzzles. Although the average nodes visited only improved by a factor of around $4$ by adding the Depth-2 Blocking Heuristic, the worst case nodes visited scenario improved by a factor of nearly $10,$ showing that the effects of this heuristic are larger the larger the initial inefficiency.
+
+One of the key takeaways from this project is that however simple a premise may seem, the inner numbers and interactions may be incredibly complex, and hence, there is no general "ruleset" for coming up with heuristics or clever BFS shortcuts, and considerable time must be spent on *free exploration* to come up with a good solution.
 
 ## TO-DO (Future?)
 - Reduce runtime of current algorithm through improvements in code and implementation
