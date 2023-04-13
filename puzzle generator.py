@@ -39,13 +39,23 @@ class State:
                     return False
         return True
 
-def numofcars(size, difficulty):
-    if difficulty == 1: #easy
-        return random.randint(floor(size**2/6), floor(size**2/4)), random.randint(floor(size**2/20), floor(size**2/12))
-    if difficulty == 2: #medium
-        return random.randint(floor(size**2/5), floor(size**2/3.75)), random.randint(floor(size**2/16), floor(size**2/11))
-    if difficulty == 3: #hard
-        return random.randint(floor(size**2/4), floor(size**2/3.5)), random.randint(floor(size**2/12), floor(size**2/10))
+    def __lt__(self, other):
+        return random.randint(0, 2)
+
+def hashvalue(state):
+    #hashes each board state into a number
+    res = 0
+    base = len(state.cars)+1
+    power = 0
+    for i in range(0, len(state.board)):
+        for j in range(0, len(state.board)):
+            res += (base**power)*state.board[i][j]
+            power += 1
+    return res
+
+def heuristic(state):
+    #A* considers the number of moves from the start and the expected # of moves to finish
+    return (len(state.currmoves))
 
 def available(length, orientation, board):
     #returns an array of available locations
@@ -162,15 +172,41 @@ def printboard(state):
         res = res + line3
     print(res)
     
-def generate(size, difficulty, quantity):
+def takeInput():
+    print("What would you like the grid size to be?")
+    n = int(input())
+    print("How many cars would you like?")
+    c = int(input())
+    cars = []
+    print("We'll represent the grid with coordinates, with the x-position increasing from left to right and the y-position increasing from top to bottom. All coordinates begin at 1.")
+    print("\n")
+    for i in range(c):
+        print("Enter the x and y coordinate of the top-left square of car #" + str(i+1) + " with a single space in between the two numbers.")
+        coords = input().split(" ")
+        xcoord = int(coords[0])
+        ycoord = int(coords[1])
+        print("How long is the car?")
+        length = int(input())
+        print("Finally, is the car's body spanning left-right or top-bottom? Enter 1 for left/right and 2 for top/bottom.")
+        direction = int(input())
+        car = Car(xcoord, ycoord, length, direction)
+        cars.append(car)
+    print("You initialized a puzzle with the following cars: ")
+
+    for j in range(len(cars)):
+        c = cars[j]
+        print("Car #" + str(j+1) + ": " + "top left corner at [" + str(c.x) + ", " + str(c.y) + "] with length " + str(c.length) + " and spanning " + toggle(c.orient))
+    print("We will now begin finding a solution.")
+
+    return n, cars
+
+def generate(size, quantity):
     #generates rush hour puzzles of a particular grid size, difficulty, and quantity
     acquired = 0
     while acquired != quantity:
-        res = "" + str(size) + "\n"
-        twocars, threecars = numofcars(size, difficulty)
-        res = res + str(twocars+threecars) + "\n"
         successful = False
         while not successful:
+            twocars, threecars = random.randint(9, 12), random.randint(1, 4)
             successful = True
             cars = []
             board = []
@@ -206,28 +242,90 @@ def generate(size, difficulty, quantity):
                     for l in curr.occupy():
                         board[l[1]-1][l[0]-1] = j+threecars+2
                     cars.append(curr)
-                    
         state = State(board, cars, [])
-        puzzle = scramble(state, 30)
+        puzzle = scramble(state, 200)
         if len(puzzle.cars) > 0:
-            acquired += 1
-            printboard(puzzle)
+            res = "" + str(size) + "\n"
+            res = res + str(twocars+threecars) + "\n"
+            for i in puzzle.cars:
+                res = res + str(i.x) + " " + str(i.y) + "\n" + str(i.length) + "\n" + str(i.orient) + "\n"
+            if steps(res) >= 9:
+                acquired += 1
+                f = open("/Users/owenzhang/Documents/p" + str(acquired) + ".txt", "w")
+                f.write(res)
+                f.close()
+                print(str(acquired) + " puzzles created.")
     
-def scramble(State, depth):
-    scrambled = False
-    while not scrambled:
-        for i in range(depth):
-            choices = validmoves(State)
-            if len(choices) == 0:
-                return State([], [], [])
-            if [1, -1] in choices:
-                State = applymove([1,-1], State)
-            else:
-                j = random.choice(choices)
-                State = applymove(j, State)
-        if State.cars[0].x <= floor(len(State.board)/2)-1:
-            scrambled = True
-    return State
+def scramble(res, depth):
+    for i in range(depth):
+        choices = validmoves(res)
+        if len(choices) == 0:
+            return State([], [], [])
+        if [1, -1] in choices:
+            res = applymove([1,-1], res)
+        else:
+            j = random.choice(choices)
+            res = applymove(j, res)
+    return res
+
+visited = set() #stores instances of "State"
+pq = PriorityQueue()
+solved = False
+target = [5, 3]
+def bfs():
+    global solved, pq, visited, target
+    index = 0
+    while not solved:
+        curr = pq.get()[1]
+        if curr.cars[0].x == target[0] and curr.cars[0].y == target[1]:
+            return len(curr.currmoves)
+        for i in validmoves(curr):
+            new = applymove(i, curr)
+            if hashvalue(new) not in visited:
+                visited.add(hashvalue(new))
+                pq.put((heuristic(new), new))
+        index += 1
+        
+def steps(puzzle):
+    global visited, pq
+    visited.clear(), pq.queue.clear()
+    #once our model left-right length 2 red car arrives here, the game is won
+    data = puzzle.split("\n")[:-1]
+    n = int(data[0])
+    numcars = int(data[1])
+    startcars = []
+    index = 2
+    for j in range(numcars):
+        x, y = int(data[index].split(" ")[0]), int(data[index].split(" ")[1])
+        index += 1
+        length = int(data[index])
+        index += 1
+        orient = int(data[index])
+        index += 1
+        startcars.append(Car(x, y, length, orient))
+
+    startboard = []
+    for i in range(n):
+        l = []
+        for j in range(n):
+            l.append(0)
+        startboard.append(l)
+
+    for i in range(1, len(startcars)+1):
+        for k in startcars[i-1].occupy():
+            startboard[k[1]-1][k[0]-1] = i
+
+    initial = State(startboard, startcars, [])
+    pq.put((0, initial))
+    return bfs()
+        
+#generate(6, 231)      
+
+
+
+
+
+
         
             
         
