@@ -136,7 +136,7 @@ def applymove(move, oldstate):
     newcars.insert(index, newcar)
     State.cars = newcars
     #change moves component
-    moves = copy.copy(State.currmoves)
+    moves = copy.deepcopy(State.currmoves)
     moves.append(move)
     State.currmoves = moves
     
@@ -160,21 +160,65 @@ def hashvalue(state):
             power += 1
     return res
 
-def blocking(state):
+def blocking(state, carlist):
     global n
     board = state.board
     #return the number of cars currently in the way from the red car to the exit
     blocks = {0}
     cars = state.cars
-    for x in range(cars[0].x+cars[0].length-1, n):
-        if board[cars[0].y-1][x] not in blocks:
-            blocks.add(board[cars[0].y-1][x])
-    return (len(blocks)-1)
+    for i in carlist:
+        if i.orient == 1:
+            for x in range(i.x+i.length-1, n):
+                if board[i.y-1][x] not in blocks:
+                    blocks.add(board[i.y-1][x])
+        else:
+            for x in range(i.y+i.length-1, n):
+                if board[x][i.x-1] not in blocks:
+                    blocks.add(board[x][i.x-1])
+    return (len(blocks)-1, blocks)
 
-def heuristic(state):
+def heuristic(state, mode):
     #A* considers the number of moves from the start and the expected # of moves to finish
-    return (len(state.currmoves))
-
+    if mode == 1: return (len(state.currmoves))
+    if mode == 2: return (len(state.currmoves)+blocking(state, [state.cars[0]])[0])
+    if mode == 3:
+        adj = blocking(state, [state.cars[0]])[1]
+        carlist = []
+        for j in adj:
+            if j != 0:
+                carlist.append(state.cars[j-1])
+        new = blocking(state, carlist)[1]
+        total = []
+        for i in adj:
+            if i not in total:
+                total.append(i)
+        for i in new:
+            if i not in total:
+                total.append(i)
+        return (len(state.currmoves) + len(total)-1)
+    if mode == 4:
+        adj = blocking(state, [state.cars[0]])[1]
+        carlist = []
+        for j in adj:
+            if j != 0:
+                carlist.append(state.cars[j-1])
+        new = blocking(state, carlist)[1]
+        carlist = []
+        for j in new:
+            if j != 0:
+                carlist.append(state.cars[j-1])
+        new2 = blocking(state, carlist)[1]
+        total = []
+        for i in adj:
+            if i not in total:
+                total.append(i)
+        for i in new:
+            if i not in total:
+                total.append(i)
+        for i in new2:
+            if i not in total:
+                total.append(i)
+        return (len(state.currmoves) + len(total)-1)
 def printboard(state):
     dimension = len(state.board)
     res = "- "
@@ -238,39 +282,66 @@ def bfs():
     while not solved:
         curr = pq.get()[1]
         if curr.cars[0].x == target[0] and curr.cars[0].y == target[1]:
-            solved = True
-            print("Found a solution of length " + str(len(curr.currmoves)) + "!")
-            for i in curr.currmoves: print(i)
-            printsol(curr)
-            print("Runtime: " + str(time.time()-st) + " sec")
+            return (index+1, len(curr.currmoves))
         for i in validmoves(curr):
             new = applymove(i, curr)
             if hashvalue(new) not in visited:
                 visited.add(hashvalue(new))
-                pq.put((heuristic(new), new))
+                pq.put((heuristic(new, 4), new))
         index += 1
         
             
 target = [5, 3] #once our model left-right length 2 red car arrives here, the game is won
-n, startcars = takeInput()
+n = 6
 
-startboard = []
-for i in range(n):
-    l = []
-    for j in range(n):
-        l.append(0)
-    startboard.append(l)
+#once our model left-right length 2 red car arrives here, the game is won
+def interpret(puzzle):
+    global visited, pq
+    visited.clear(), pq.queue.clear()
+    data = puzzle.split("\n")[:-1]
+    n = int(data[0])
+    numcars = int(data[1])
+    startcars = []
+    index = 2
+    for j in range(numcars):
+        x, y = int(data[index].split(" ")[0]), int(data[index].split(" ")[1])
+        index += 1
+        length = int(data[index])
+        index += 1
+        orient = int(data[index])
+        index += 1
+        startcars.append(Car(x, y, length, orient))
+            
+    startboard = []
+    for i in range(n):
+        l = []
+        for j in range(n):
+            l.append(0)
+        startboard.append(l)
 
-for i in range(1, len(startcars)+1):
-    for k in startcars[i-1].occupy():
-        startboard[k[1]-1][k[0]-1] = i
+    for i in range(1, len(startcars)+1):
+        for k in startcars[i-1].occupy():
+            startboard[k[1]-1][k[0]-1] = i
+
+    initial = State(startboard, startcars, [])
+    pq.put((0, initial))
 
 
-initial = State(startboard, startcars, [])
-pq.put((0, initial))
-
-
-bfs()
+a = ""
+b = ""
+w = open("/Users/owenzhang/Documents/testdata4.txt", "w")
+for i in range(1, 251):
+    f = open("/Users/owenzhang/Documents/puzzles/p" + str(i) + ".txt", "r")
+    interpret(f.read())
+    c, d = bfs()
+    a = a+str(c) + " "
+    b = b+str(d) + " "
+    print(i)
+w.write(a)
+w.write("\n")
+w.write(b)
+w.write("\n")
+w.close()
 
 
 
