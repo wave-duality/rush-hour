@@ -41,3 +41,4 @@ One of the key takeaways from this project is that however simple a premise may 
 - Write code to generate difficult test-cases that can evaluate effect of various heuristics
   - Current generator code has multiple major bugs and usually produces trivial puzzles
 - Implement graphics
+- Find the patience to input the 40 given test cases to more concretely compare the impacts of A* vs. Naive BFS on the two datasets
