@@ -1,4 +1,4 @@
-# didactic-umbrella
+# rush-hour (formerly didactic-umbrella)
 
 ## Introduction
 This is a project to implement the game "Rush Hour" in Python, where the player tries to resolve a traffic jam by moving cars on a grid, with the objective of getting a specific car to the exit. 
