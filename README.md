@@ -20,7 +20,7 @@ Of course, the blocking heuristic can be taken a step further. We then played wi
 Over all 250 test cases:
 
 
-|    | Avg Nodes Visited ($\mu$) | Avg Length of Solution ($\mu$) | Maximum Nodes Visited |
+|    | $\mu$(Nodes Visited)  | \mu$(Length of Solution) | $\max$(Nodes Visited) |
 |--- | --- | --- | --- |
 |Zero-Heuristic (Naive BFS) | 2294.8 | 9.952 | 47162 |
 |One-Blocking-Heuristic | 1148.2 | 9.96 | 14030 |
